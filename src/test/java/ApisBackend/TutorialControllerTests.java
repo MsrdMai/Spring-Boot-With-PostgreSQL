@@ -21,8 +21,7 @@ import org.springframework.util.MultiValueMap;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -89,6 +88,23 @@ class TutorialControllerTests {
         Page<Tutorial> pageTutorials = new PageImpl<>(tutorials);
         when(tutorialRepository.findAll(any(Pageable.class))).thenReturn(pageTutorials);
         mockMvc.perform(get("/api/tutorials"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tutorials.size()").value(tutorials.size()))
+                .andDo(print());
+    }
+
+    @Test
+    void shouldReturnListOfPublished() throws Exception {
+        List<Tutorial> tutorials = new ArrayList<>(
+                Arrays.asList(
+                        new Tutorial(1L, "Spring Boot @WebMvcTest 1", "Description 1", true),
+                        new Tutorial(2L, "Spring Boot @WebMvcTest 2", "Description 2", true),
+                        new Tutorial(3L, "Spring Boot @WebMvcTest 3", "Description 3", true)
+                )
+        );
+        Page<Tutorial> pageTutorials = new PageImpl<>(tutorials);
+        when(tutorialRepository.findByPublished(any(boolean.class), any(Pageable.class))).thenReturn(pageTutorials);
+        mockMvc.perform(get("/api/tutorials/published"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tutorials.size()").value(tutorials.size()))
                 .andDo(print());
@@ -173,5 +189,72 @@ class TutorialControllerTests {
                 .andExpect(status().isNoContent())
                 .andDo(print());
     }
+
+//Error-----------------------------------------------------------------------------------<
+    @Test
+    void shouldReturnErrorOfListOfTutorials() throws Exception {
+        List<Tutorial> tutorials = new ArrayList<>(
+                Arrays.asList(
+                        new Tutorial(1L, "Spring Boot @WebMvcTest 1", "Description 1", true),
+                        new Tutorial(2L, "Spring Boot @WebMvcTest 2", "Description 2", true),
+                        new Tutorial(3L, "Spring Boot @WebMvcTest 3", "Description 3", true)
+                )
+        );
+        when(tutorialRepository.findAll(any(Pageable.class))).thenThrow(new RuntimeException());
+        mockMvc.perform(get("/api/tutorials"))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+
+    @Test
+    void shouldReturnErrorListOfPublished() throws Exception {
+        List<Tutorial> tutorials = new ArrayList<>(
+                Arrays.asList(
+                        new Tutorial(1L, "Spring Boot @WebMvcTest 1", "Description 1", true),
+                        new Tutorial(2L, "Spring Boot @WebMvcTest 2", "Description 2", true),
+                        new Tutorial(3L, "Spring Boot @WebMvcTest 3", "Description 3", true)
+                )
+        );
+        Page<Tutorial> pageTutorials = new PageImpl<>(tutorials);
+        when(tutorialRepository.findByPublished(any(boolean.class), any(Pageable.class))).thenThrow(new RuntimeException());
+        mockMvc.perform(get("/api/tutorials/published"))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+    @Test
+    void shouldReturnErrorOfCreateTutorial() throws Exception {
+        Tutorial tutorial = new Tutorial(
+                1L, "Spring Boot @WebMvcTest", "Description", true
+        );
+        when(tutorialRepository.save(any(Tutorial.class))).thenThrow(new RuntimeException());
+        mockMvc.perform(post("/api/tutorials")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(tutorial)))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+
+    }
+    //=================================
+    @Test
+    void shouldReturnErrorDeleteTutorial() throws Exception {
+        long id = 1L;
+        doThrow(new RuntimeException()).when(tutorialRepository).deleteById(id);
+        mockMvc.perform(delete("/api/tutorials/{id}", id))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+    @Test
+    void shouldReturnErrorDeleteAllTutorials() throws Exception {
+        doThrow(new RuntimeException()).when(tutorialRepository).deleteAll();
+        mockMvc.perform(delete("/api/tutorials"))
+                .andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
+
+
 
 }

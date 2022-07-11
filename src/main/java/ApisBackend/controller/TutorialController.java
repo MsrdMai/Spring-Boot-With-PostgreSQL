@@ -31,24 +31,27 @@ public class TutorialController {
                 @RequestParam(required = false) String title,
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "3") int size
-        ) throws ConversionNotSupportedException {
+        ) {
 
-
-                Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
-                Page<Tutorial> pageTutorials;
-                if (title == null) {
-                    pageTutorials = tutorialRepository.findAll(paging);
-                } else {
-                    pageTutorials = tutorialRepository.findByTitleContaining(title, paging);
-                }
-                List<Tutorial> tutorials = pageTutorials.getContent();
-                Map<String, Object> response = new HashMap<>();
-                response.put("tutorials", tutorials);
-                response.put("currentPage", pageTutorials.getNumber());
-                response.put("totalItems", pageTutorials.getTotalElements());
-                response.put("totalPages", pageTutorials.getTotalPages());
-                return new ResponseEntity<>(response, HttpStatus.OK);
-
+        try {
+            Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
+            Page<Tutorial> pageTutorials;
+            if (title == null) {
+                pageTutorials = tutorialRepository.findAll(paging);
+            } else {
+                pageTutorials = tutorialRepository.findByTitleContaining(title, paging);
+            }
+            List<Tutorial> tutorials = pageTutorials.getContent();
+            Map<String, Object> response = new HashMap<>();
+            response.put("tutorials", tutorials);
+            response.put("currentPage", pageTutorials.getNumber());
+            response.put("totalItems", pageTutorials.getTotalElements());
+            response.put("totalPages", pageTutorials.getTotalPages());
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        catch (Exception e){
+          return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
 
         }
 
@@ -63,9 +66,9 @@ public class TutorialController {
         public ResponseEntity<Map<String, Object>> findByPublished(
                 @RequestParam(defaultValue = "0") int page,
                 @RequestParam(defaultValue = "3") int size
-        ) throws ConversionNotSupportedException{
+        ) {
 
-
+        try {
             Pageable paging = PageRequest.of(page, size);
             Page<Tutorial> pageTutorials = tutorialRepository.findByPublished(true, paging);
             List<Tutorial> tutorials = pageTutorials.getContent();
@@ -76,12 +79,22 @@ public class TutorialController {
             response.put("totalPages", pageTutorials.getTotalPages());
             return new ResponseEntity<>(response, HttpStatus.OK);
         }
+        catch (Exception e){
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        }
 
         @PostMapping("/tutorials")
-        public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial this_tutorial) throws ConversionNotSupportedException{
+        public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial this_tutorial) {
+
+            try{
             Tutorial repo_tutorial = tutorialRepository
-                        .save(new Tutorial(this_tutorial.getTitle(), this_tutorial.getDescription(), false));
+                .save(new Tutorial(this_tutorial.getTitle(), this_tutorial.getDescription(), false));
                 return new ResponseEntity<>(repo_tutorial, HttpStatus.CREATED);
+            }
+            catch (Exception e){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
 
         }
 
@@ -100,16 +113,26 @@ public class TutorialController {
         }
 
         @DeleteMapping("/tutorials/{id}")
-        public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) throws ConversionNotSupportedException{
+        public ResponseEntity<HttpStatus> deleteTutorial(@PathVariable("id") long id) {
+            try{
                 tutorialRepository.deleteById(id);
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            catch (Exception e){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
 
         }
 
         @DeleteMapping("/tutorials")
-        public ResponseEntity<HttpStatus> deleteAllTutorials() throws ConversionNotSupportedException{
+        public ResponseEntity<HttpStatus> deleteAllTutorials() {
+            try{
                 tutorialRepository.deleteAll();
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            catch (Exception e){
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
 
         }
 
